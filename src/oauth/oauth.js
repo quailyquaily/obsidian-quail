@@ -7,40 +7,41 @@ const clientID = "866c9dba-e267-47b8-ad48-2ca9105dd3cd";
 const redirectURI = "http://localhost:63812/oauth/code";
 const scopes = ["user.full", "post.write"];
 
-function generateCodeVerifier() {
-  // Create 32 random bytes
-  const randomBytes = new Uint8Array(32);
-  crypto.getRandomValues(randomBytes);
-
-  // Base64-url encode (raw)
-  // 1. Convert bytes to a normal Base64
-  // 2. Replace unsafe URL chars (+, /, =) so we get a 'raw url encoding'
-  let base64String = btoa(String.fromCharCode(...randomBytes))
+function base64UrlEncode(input) {
+  return Buffer.from(input)
+    .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=/g, "");
+}
 
-  return base64String;
+function generateCodeVerifier() {
+  return base64UrlEncode(crypto.randomBytes(32));
 }
 
 function getCodeFromUrl(url) {
   const redirectUrl = new URL(url);
-  // If it's your expected callback route:
-  // We got the callback, so we can parse params, e.g. ?code=XYZ
   const code = redirectUrl.searchParams.get('code');
   const returnedState = redirectUrl.searchParams.get("state") || "";
-  if (code || returnedState) {
-    // Exchange your code for a token, or do other flow tasks
-    return { code, returnedState };
-  }
-  return { code: "", returnedState: "" };
+  return { code: code || "", returnedState };
 }
 
+function generateCodeChallengeS256(codeVerifier) {
+  const digest = crypto.createHash("sha256").update(codeVerifier).digest();
+  return base64UrlEncode(digest);
+}
+
+function generateState() {
+  if (typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return base64UrlEncode(crypto.randomBytes(16));
+}
 
 async function startLoginElectron() {
   const codeVerifier = generateCodeVerifier();
-  const codeChallenge = codeVerifier; // for plain
-  const state = crypto.randomUUID();
+  const codeChallenge = generateCodeChallengeS256(codeVerifier);
+  const state = generateState();
 
   // Construct the authorization URL
   const authURL = new URL("/oauth/authorize", authBase);
@@ -50,7 +51,7 @@ async function startLoginElectron() {
   authURL.searchParams.set("scope", scopes.join(" "));
   authURL.searchParams.set("state", state);
   authURL.searchParams.set("code_challenge", codeChallenge);
-  authURL.searchParams.set("code_challenge_method", "plain");
+  authURL.searchParams.set("code_challenge_method", "S256");
 
   // Open a window to show the provider’s login/consent page
   const loginWindow = new BrowserWindow({
@@ -62,75 +63,76 @@ async function startLoginElectron() {
     },
   });
 
-  // Listen for the callback URL via webRequest
-  const { session: { webRequest } } = loginWindow.webContents;
-
-  const filter = {
-    urls: [
-      "http://localhost:63812/oauth/code*"
-    ]
-  };
-
   return new Promise((resolve, reject) => {
-    const handleCallback = async (event, url) => {
-      const { code, returnedState } = getCodeFromUrl(event, url, loginWindow);
+    let completed = false;
+
+    const isCallbackUrl = (url) => {
+      try {
+        return url.startsWith(redirectURI);
+      } catch {
+        return false;
+      }
+    };
+
+    const cleanup = () => {
+      loginWindow.webContents.removeListener("will-navigate", onWillNavigate);
+      loginWindow.webContents.removeListener("will-redirect", onWillRedirect);
+      loginWindow.removeListener("closed", onClosed);
+    };
+
+    const finish = async (promise) => {
+      if (completed) return;
+      completed = true;
+      cleanup();
+      try {
+        const token = await promise;
+        resolve(token);
+      } catch (err) {
+        reject(err);
+      } finally {
+        if (!loginWindow.isDestroyed()) {
+          loginWindow.close();
+        }
+      }
+    };
+
+    const handleCallback = async (url) => {
+      const { code, returnedState } = getCodeFromUrl(url);
       if (returnedState !== state) {
         throw new Error("State mismatch. Potential CSRF attack or lost session.");
       }
       if (!code) {
         throw new Error("No authorization code found in callback.");
       }
-      // We can close the login window now
-      loginWindow.close();
+      return await exchangeCodeForToken(code, codeVerifier, redirectURI);
+    };
 
-      // Exchange the code for a token
-      const token = await exchangeCodeForToken(
-        code,
-        codeVerifier,
-        redirectURI,
-        clientID
-      );
-      return token;
-    }
-    // Listen for a navigation or redirect
-    loginWindow.webContents.on('will-navigate', (event, url) => {
+    const onWillNavigate = (event, url) => {
+      if (!isCallbackUrl(url)) return;
       event.preventDefault();
-      try {
-        const token = handleCallback(url);
-        resolve(token);
-      } catch (err) {
-        loginWindow.close();
-        reject(err);
-      }
-    });
+      void finish(handleCallback(url));
+    };
 
-    // Also handle redirect
-    loginWindow.webContents.on('did-redirect-navigation', (event, url, isInPlace, isMainFrame) => {
+    const onWillRedirect = (event, url) => {
+      if (!isCallbackUrl(url)) return;
       event.preventDefault();
-      try {
-        const token = handleCallback(url);
-        resolve(token);
-      } catch (err) {
-        loginWindow.close();
-        reject(err);
-      }
-    });
+      void finish(handleCallback(url));
+    };
 
-    // Intercept the callback request
-    webRequest.onBeforeRequest(filter, async ({ url }) => {
-      try {
-        const token = handleCallback(url);
-        resolve(token);
-      } catch (err) {
-        loginWindow.close();
-        reject(err);
-      }
-    });
+    const onClosed = () => {
+      if (completed) return;
+      completed = true;
+      cleanup();
+      reject(new Error("Login window closed before completing authentication."));
+    };
+
+    loginWindow.webContents.on("will-navigate", onWillNavigate);
+    loginWindow.webContents.on("will-redirect", onWillRedirect);
+    loginWindow.on("closed", onClosed);
 
     // Load the authorization URL
-    loginWindow.loadURL(authURL.toString());
-
-    loginWindow.on("closed", () => {
+    loginWindow.loadURL(authURL.toString()).catch((err) => {
+      void finish(Promise.reject(err));
     });
   });
 }
