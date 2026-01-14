@@ -50,13 +50,13 @@ export default function setChannel(app: App, settings: QuailPluginSettings, save
 
         const channelList = lists.map((list: any) => ({
           title: list.title,
-          id: list.id
+          id: `${list.id}`
         }));
 
         new ChannelSuggestModal(app, channelList, async (item) => {
           for (let ix = 0; ix < lists.length; ix++) {
-            if (lists[ix].id === item.id) {
-              settings.listID = lists[ix].id;
+            if (`${lists[ix].id}` === item.id) {
+              settings.listID = `${lists[ix].id}`;
               settings.listSlug = lists[ix].slug;
               await saveSettings();
               new Notice(t('notices.set_channel_success', { title: item.title }));

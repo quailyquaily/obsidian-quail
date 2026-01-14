@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { BrowserWindow } from "@electron/remote";
 
 const authBase = "https://quaily.com";
-const apiBase = "https://api.quail.ink";
+const apiBase = "https://api.quaily.com";
 const clientID = "866c9dba-e267-47b8-ad48-2ca9105dd3cd";
 const redirectURI = "http://localhost:63812/oauth/code";
 const scopes = ["user.full", "post.write"];
@@ -13,6 +13,21 @@ function base64UrlEncode(input) {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=/g, "");
+}
+
+async function fetchWithTimeout(url, options, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err && typeof err === "object" && err.name === "AbortError") {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function generateCodeVerifier() {
@@ -156,7 +171,7 @@ async function exchangeCodeForToken(code, verifier, redirectURI) {
   bodyData.set("client_id", clientID);
   bodyData.set("code_verifier", verifier);
 
-  const response = await fetch(tokenURL.toString(), {
+  const response = await fetchWithTimeout(tokenURL.toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -181,7 +196,7 @@ async function refreshToken(refreshToken) {
   data.set("refresh_token", refreshToken);
   data.set("client_id", clientID);
 
-  const resp = await fetch(tokenURL.toString(), {
+  const resp = await fetchWithTimeout(tokenURL.toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

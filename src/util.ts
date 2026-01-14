@@ -49,7 +49,7 @@ export default {
     const fmc = fc?.frontmatter;
     const fmp = fc?.frontmatterPosition;
     if (fmc && fmp && fmc !== undefined) {
-      const end = fmp.end.line + 1; // accont for ending ---
+      const end = fmp.end.line + 1; // account for ending ---
       content = text.split("\n").slice(end).join("\n");
       for (const key in fmc) {
         if (Object.prototype.hasOwnProperty.call(fmc, key)) {
@@ -79,7 +79,7 @@ export default {
     const fmc = fc?.frontmatter;
     const fmp = fc?.frontmatterPosition;
     if (fmc && fmp && fmc !== undefined) {
-      const end = fmp.end.line + 1; // accont for ending ---
+      const end = fmp.end.line + 1; // account for ending ---
       content = text.split("\n").slice(end).join("\n");
     }
 

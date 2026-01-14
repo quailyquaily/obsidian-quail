@@ -3,7 +3,8 @@ import { ErrorModal, LoadingModal } from '../modals';
 import { QuailPluginSettings } from '../interface';
 import { PreviewModal } from '../modals';
 import { t, english } from 'src/i18n';
-export default function preview(app: App, client: any, auxiliaClient: any, settings: QuailPluginSettings) {
+import type { AuxiliaClient, Client } from 'quail-js';
+export default function preview(app: App, client: Client, auxiliaClient: AuxiliaClient, settings: QuailPluginSettings) {
   let name = english('actions.preview');
   if (!settings.useEnglishCmds) {
     name = t('actions.preview');

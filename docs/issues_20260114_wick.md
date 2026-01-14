@@ -61,20 +61,20 @@ Columns:
 
 | ID | Type | Summary | Evidence | Source | Verification | State |
 |---:|:--|:--|:--|:--|:--|:--|
-| 19 | Logic Bug | Tags validation regex uses `/g` with `test()`; currently low-risk, but better to remove `/g` to avoid statefulness pitfalls. | `src/frontmatter.ts:91` | John | Partially Verified | Open |
-| 20 | I18n | Template replacement is naive (replaces first occurrence per key; no escaping). | `src/i18n/index.ts:46` | John | Partially Verified | Open |
-| 21 | Type Safety | Excessive `any` use (clients, settings, frontmatter) reduces compile-time guarantees. | `main.ts`, `src/interface/index.ts:9` | John | Verified | Open |
-| 22 | Code Quality | Dead commented code remains in `main.ts`. | `main.ts` | John | Verified | Open |
-| 23 | Code Quality | Debug UI (dialog test buttons, token expiry button) exists but is hidden behind a multi-click toggle. | `src/setting/index.ts:127` | John | Partially Verified | Open |
-| 24 | Configuration | OAuth client id/redirect URI/base URLs are hardcoded. | `src/oauth/oauth.js:4` | John | Verified | Open |
-| 25 | Documentation | Typo in comment (“accont”). | `src/util.ts:52` | John | Verified | Open |
-| 26 | Error Handling | No explicit request timeouts (OAuth `fetch`; `quail-js` calls not verified here). | `src/oauth/oauth.js:157` | John | Partially Verified | Open |
+| 19 | Logic Bug | Tags validation regex uses `/g` with `test()`; currently low-risk, but better to remove `/g` to avoid statefulness pitfalls. | `src/frontmatter.ts` | John | Partially Verified | Fixed |
+| 20 | I18n | Template replacement is naive (replaces first occurrence per key; no escaping). | `src/i18n/index.ts` | John | Partially Verified | Fixed |
+| 21 | Type Safety | Excessive `any` use (clients, settings, frontmatter) reduces compile-time guarantees. | `src/interface/index.ts`, `src/actions/*.ts`, `global.d.ts` | John | Verified | Fixed |
+| 22 | Code Quality | Dead commented code remains in `main.ts`. | `main.ts` | John | Verified | Fixed |
+| 25 | Documentation | Typo in comment (“accont”). | `src/util.ts` | John | Verified | Fixed |
+| 26 | Error Handling | No explicit request timeouts (OAuth `fetch`; `quail-js` calls not verified here). | `src/oauth/oauth.js` | John | Partially Verified | Fixed |
 | 27 | Build/CI | Release workflow uses deprecated patterns and broad permissions. | `.github/workflows/release.yaml:13`, `.github/workflows/release.yaml:18` | Wick | Verified | Open |
 
 ### Not Verified (Claims)
 
 | ID | Type | Summary | Evidence | Source | Verification |
 |---:|:--|:--|:--|:--|:--|
+| 23 | Code Quality | Debug UI (dialog test buttons, token expiry button) exists but is hidden behind a multi-click toggle. It's a correct behavior. | `src/setting/index.ts:127` | John | Not Verified |
+| 24 | Configuration | OAuth client id/redirect URI/base URLs are hardcoded. But it's fine, because the OAuth client is only used by this plugin. | `src/oauth/oauth.js:4` | John | Not Verified |
 | 28 | UX Bug | Loading modal not closed on image upload error (claimed); not reproduced—publish closes in catch/finally, main crash is missing `pt` guard. | `src/actions/publish.ts:30` | John | Not Verified |
 | 29 | UX Bug | Preview early-return leaves loading modal open (claimed); not reproduced—modal closes via `finally`. | `src/actions/preview.ts:19` | John | Not Verified |
 

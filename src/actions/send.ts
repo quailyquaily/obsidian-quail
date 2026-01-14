@@ -3,7 +3,8 @@ import { QuailPluginSettings } from '../interface';
 import { LoadingModal, MessageModal, ErrorModal } from '../modals';
 import util from '../util';
 import { english, t } from 'src/i18n';
-export default function send(app: App, client: any, settings: QuailPluginSettings) {
+import type { Client } from 'quail-js';
+export default function send(app: App, client: Client, settings: QuailPluginSettings) {
   let name = english('actions.send');
   if (!settings.useEnglishCmds) {
     name = t('actions.send');

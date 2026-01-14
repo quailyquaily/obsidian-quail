@@ -45,7 +45,8 @@ function _t(lang: string, name: string, data?: Record<string, string>) {
 
   if (data) {
     for (const key in data) {
-      msg = msg.replace(`{${key}}`, data[key]);
+      const value = String(data[key]);
+      msg = msg.split(`{${key}}`).join(value);
     }
   }
 

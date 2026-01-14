@@ -1,7 +1,7 @@
 import { App } from 'obsidian';
 import { LoadingModal, MessageModal, ErrorModal } from '../modals';
 import util from '../util';
-import { QuailPluginSettings } from '../interface';
+import type { QuailImageItem, QuailPlugin, QuailPluginSettings } from '../interface';
 import fm from "../frontmatter";
 import aigen from './aigen';
 import save from './save';
@@ -12,8 +12,9 @@ import send from './send';
 import setChannel from './set-channel';
 import insertMetadata from './insert-metadata';
 import { t } from 'src/i18n';
+import type { AuxiliaClient, Client } from 'quail-js';
 
-async function uploadAttachment(client: any, image: any) {
+async function uploadAttachment(client: Client, image: QuailImageItem) {
   const formData = new FormData();
   const picArray = new Uint8Array(image.data).buffer;
 
@@ -23,7 +24,7 @@ async function uploadAttachment(client: any, image: any) {
   return resp.view_url
 }
 
-async function arrangeArticle(app: App, client: any, auxiliaClient: any, settings: QuailPluginSettings) {
+async function arrangeArticle(app: App, client: Client, auxiliaClient: AuxiliaClient, settings: QuailPluginSettings) {
   const { title, content, frontmatter: frontmatterO, images, err } = await util.getActiveFileContent(app);
   if (err != null) {
     new ErrorModal(app, new Error(err.toString())).open();
@@ -117,7 +118,7 @@ async function arrangeArticle(app: App, client: any, auxiliaClient: any, setting
 }
 
 
-export async function savePost(app: App, client: any, auxiliaClient:any, settings: QuailPluginSettings) {
+export async function savePost(app: App, client: Client, auxiliaClient: AuxiliaClient, settings: QuailPluginSettings) {
   const { title, frontmatter, content } = await arrangeArticle(app, client, auxiliaClient, settings);
   if (content == null || title == null) {
     return;
@@ -196,7 +197,7 @@ export async function savePost(app: App, client: any, auxiliaClient:any, setting
   return resp;
 }
 
-export function getActions(plugin: any) {
+export function getActions(plugin: QuailPlugin) {
   const app = plugin.app;
   const settings = plugin.settings;
   const client = plugin.client;

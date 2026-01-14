@@ -22,8 +22,8 @@ const DEFAULT_SETTINGS: QuailPluginSettings = {
 
 export default class QuailPlugin extends Plugin implements QuailPlugin {
 	settings: QuailPluginSettings;
-	client: any;
-	auxiliaClient: any;
+	client: Client;
+	auxiliaClient: AuxiliaClient;
 
 	private parseTokenExpiry(value: string): Date | null {
 		const trimmed = value.trim();
@@ -59,26 +59,13 @@ export default class QuailPlugin extends Plugin implements QuailPlugin {
 			await Promise.all(q);
 
 			await this.saveSettings();
+			}
+
+			await this.loadActions();
+
+			// Settings tab
+			this.addSettingTab(new QuailSettingTab(this.app, this));
 		}
-
-		await this.loadActions();
-		// const actions = getActions(this.client, this);
-		// for (let ix = 0; ix < actions.length; ix++) {
-		// 	const action:any = actions[ix];
-		// 	this.addCommand(action);
-		// }
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new QuailSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		// this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-		// });
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		// this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-	}
 
 	onunload() {
 	}
@@ -121,6 +108,13 @@ export default class QuailPlugin extends Plugin implements QuailPlugin {
 	}
 
 	async updateChannels() {
+		if (!this.settings.me) {
+			this.settings.lists = [];
+			this.settings.listID = '';
+			this.settings.listSlug = '';
+			return;
+		}
+
 		const lists = await this.client.getUserLists(this.settings.me.id);
 		this.settings.lists = lists;
 		let found = false;
@@ -128,14 +122,14 @@ export default class QuailPlugin extends Plugin implements QuailPlugin {
 			const list = lists[ix];
 			if (`${list.id}` === this.settings.listID || list.slug === this.settings.listSlug) {
 				found = true;
-				this.settings.listID = list.id;
+				this.settings.listID = `${list.id}`;
 				this.settings.listSlug = list.slug;
 				break;
 			}
 		}
 		if (!found) {
 			if (lists.length > 0) {
-				this.settings.listID = lists[0].id;
+				this.settings.listID = `${lists[0].id}`;
 				this.settings.listSlug = lists[0].slug;
 			} else {
 				this.settings.listID = '';

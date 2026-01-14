@@ -1,11 +1,12 @@
 import dayjs from "dayjs";
+import type { AuxiliaClient } from "quail-js";
 
 function encodeQuote(str:string) {
   return str.replace(/"/g, '\\"');
 }
 
 export default {
-  suggestFrontmatter: async function(client:any, title: string, content: string, images: any[]) {
+  suggestFrontmatter: async function(client: AuxiliaClient, title: string, content: string, images: any[]) {
     const ret:Record<string, any> = {};
     // default datetime
     const now = dayjs();
@@ -88,7 +89,7 @@ export default {
           case "tags": {
             // tags is string, split by ','
             console.log(typeof value, value.constructor.name);
-            const re = /\s*([^\s,]+)\s*(?:,\s*|$)/g;
+            const re = /\s*([^\s,]+)\s*(?:,\s*|$)/;
             if (typeof value === "string") {
               const trimed = value.trim();
               if (trimed.length !== 0) {
@@ -201,4 +202,3 @@ export default {
     return ret;
   }
 }
-

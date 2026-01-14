@@ -4,8 +4,9 @@ import { LoadingModal, ErrorModal } from '../modals';
 import { App } from 'obsidian';
 import { QuailPluginSettings } from 'src/interface';
 import { t, english } from 'src/i18n';
+import type { AuxiliaClient } from 'quail-js';
 
-const aigen = function (app: App, auxiliaClient: any, settings: QuailPluginSettings) {
+const aigen = function (app: App, auxiliaClient: AuxiliaClient, settings: QuailPluginSettings) {
   let name = english('actions.ai_gen_metadata');
   if (!settings.useEnglishCmds) {
     name = t('actions.ai_gen_metadata');

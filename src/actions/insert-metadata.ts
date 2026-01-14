@@ -4,8 +4,9 @@ import fm from '../frontmatter';
 import { t, english } from 'src/i18n';
 import aigen from './aigen';
 import { QuailPluginSettings } from 'src/interface';
+import type { AuxiliaClient } from 'quail-js';
 
-export default function insertMetadata(app: App, auxiliaClient: any, settings: QuailPluginSettings) {
+export default function insertMetadata(app: App, auxiliaClient: AuxiliaClient, settings: QuailPluginSettings) {
   let name = english('actions.insert_metadata');
   if (!settings.useEnglishCmds) {
     name = t('actions.insert_metadata');

@@ -3,7 +3,8 @@ import { LoadingModal, ErrorModal, PublishResultModal } from '../modals';
 import { QuailPluginSettings } from '../interface';
 import { savePost } from './index';
 import { t, english } from 'src/i18n';
-export default function publish(app: App, client: any, auxiliaClient: any, settings: QuailPluginSettings) {
+import type { AuxiliaClient, Client } from 'quail-js';
+export default function publish(app: App, client: Client, auxiliaClient: AuxiliaClient, settings: QuailPluginSettings) {
   let name = english('actions.publish');
   if (!settings.useEnglishCmds) {
     name = t('actions.publish');

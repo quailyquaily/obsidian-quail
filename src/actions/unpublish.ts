@@ -3,9 +3,10 @@ import { QuailPluginSettings } from '../interface';
 import { LoadingModal, ErrorModal } from '../modals';
 import util from '../util';
 import { t, english } from 'src/i18n';
+import type { Client } from 'quail-js';
 
 
-export default function unpublish(app: App, client: any, settings: QuailPluginSettings) {
+export default function unpublish(app: App, client: Client, settings: QuailPluginSettings) {
   let name = english('actions.unpublish');
   if (!settings.useEnglishCmds) {
     name = t('actions.unpublish');

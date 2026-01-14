@@ -20,17 +20,18 @@ class QuailSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h5", { text: "Quaily" });
+			containerEl.createEl("h5", { text: "Quaily" });
 
-		if (this.plugin.isLogged()) {
-			new Setting(containerEl)
-				.setHeading()
-				.setName(t('settings.account.logged.title', {name: this.plugin.settings.me.name}))
-				.setDesc(t('settings.account.logged.desc', {email: this.plugin.settings.me.email}))
-				.addButton(button => button
-					.setButtonText(t('common.logout'))
-          .setWarning()
-					.onClick(async () => {
+			const me = this.plugin.settings.me;
+			if (this.plugin.isLogged() && me) {
+				new Setting(containerEl)
+					.setHeading()
+					.setName(t('settings.account.logged.title', {name: me.name}))
+					.setDesc(t('settings.account.logged.desc', {email: me.email || ''}))
+					.addButton(button => button
+						.setButtonText(t('common.logout'))
+	          .setWarning()
+						.onClick(async () => {
 						await this.plugin.clearTokens();
 						this.display();
 					})
@@ -57,19 +58,19 @@ class QuailSettingTab extends PluginSettingTab {
 			chSec.addDropdown(dropdown => {
 				if (this.plugin.settings.lists?.length === 0) {
 					dropdown.addOption('none', t('settings.channel.empty'));
-				} else {
-					for (let ix = 0; ix < this.plugin.settings.lists.length; ix++) {
-						const list = this.plugin.settings.lists[ix];
-						dropdown.addOption(list.id, list.title);
+					} else {
+						for (let ix = 0; ix < this.plugin.settings.lists.length; ix++) {
+							const list = this.plugin.settings.lists[ix];
+							dropdown.addOption(`${list.id}`, list.title);
+						}
 					}
-				}
-				dropdown.setValue(this.plugin.settings.listID);
-				dropdown.onChange(async (value) => {
-					this.plugin.settings.listID = value;
-					this.plugin.settings.listSlug = this.plugin.settings.lists.find((list:any) => list.id === value)?.slug || '';
-					await this.plugin.saveSettings();
-				});
-			})
+					dropdown.setValue(this.plugin.settings.listID);
+					dropdown.onChange(async (value) => {
+						this.plugin.settings.listID = value;
+						this.plugin.settings.listSlug = this.plugin.settings.lists.find((list) => `${list.id}` === value)?.slug || '';
+						await this.plugin.saveSettings();
+					});
+				})
 		} else {
 			chSec.addButton(button => button
 				.setCta()

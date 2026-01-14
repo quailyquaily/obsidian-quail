@@ -1,3 +1,20 @@
+import type { Client, AuxiliaClient } from 'quail-js';
+import type { App } from 'obsidian';
+
+export interface QuailUser {
+	id: string | number;
+	name: string;
+	email?: string;
+	[key: string]: unknown;
+}
+
+export interface QuailList {
+	id: string | number;
+	slug: string;
+	title: string;
+	[key: string]: unknown;
+}
+
 export interface QuailPluginSettings {
 	listID: string;
 	listSlug: string;
@@ -6,8 +23,8 @@ export interface QuailPluginSettings {
 	refreshToken: string;
 	tokenExpiry: string;
 
-	me: any;
-	lists: any;
+	me: QuailUser | null;
+	lists: QuailList[];
 
 	strictLineBreaks: boolean;
 	useEnglishCmds: boolean;
@@ -24,8 +41,9 @@ export interface QuailImageItem {
 
 export interface QuailPlugin {
 	settings: QuailPluginSettings;
-	client: any;
-	auxiliaClient: any;
+	client: Client;
+	auxiliaClient: AuxiliaClient;
+	app: App;
 
 	onload(): Promise<void>;
 	onunload(): void;
