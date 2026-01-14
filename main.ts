@@ -25,6 +25,24 @@ export default class QuailPlugin extends Plugin implements QuailPlugin {
 	client: any;
 	auxiliaClient: any;
 
+	private parseTokenExpiry(value: string): Date | null {
+		const trimmed = value.trim();
+		if (!trimmed) return null;
+
+		const parsed = Date.parse(trimmed);
+		if (!Number.isNaN(parsed)) return new Date(parsed);
+
+		// Some servers return RFC3339 with >3 fractional second digits (JS Date parsing is inconsistent across runtimes).
+		const normalized = trimmed.replace(
+			/(\.\d{3})\d+(Z|[+-]\d{2}:\d{2})$/,
+			"$1$2"
+		);
+		const parsedNormalized = Date.parse(normalized);
+		if (!Number.isNaN(parsedNormalized)) return new Date(parsedNormalized);
+
+		return null;
+	}
+
 	async onload() {
 		await this.loadSettings();
 
@@ -126,15 +144,15 @@ export default class QuailPlugin extends Plugin implements QuailPlugin {
 		}
 	}
 
-	async updateMe() {
-		try {
-			const me = await this.client.getMe();
-			this.settings.me = me;
-		} catch (err) {
-			this.clearTokens();
-			return
+		async updateMe() {
+			try {
+				const me = await this.client.getMe();
+				this.settings.me = me;
+			} catch (err) {
+				await this.clearTokens();
+				return
+			}
 		}
-	}
 
 	async login() {
 		try {
@@ -166,30 +184,33 @@ export default class QuailPlugin extends Plugin implements QuailPlugin {
 		}
 	}
 
-	async refreshToken() {
-		try {
-			console.log("quaily.refreshToken: refresh flow start");
-			// Start the login flow in a popup
-			const token = await refreshToken(this.settings.refreshToken)
-			// if your auth server is at localhost:8080
-			console.log("quaily.refreshToken: access token expiry:", token.expiry);
-			this.settings.accessToken = token.access_token;
-			this.settings.refreshToken = token.refresh_token;
-			this.settings.tokenExpiry = token.expiry;
-			await this.saveSettings();
-		} catch (err) {
-			console.error("quaily.refreshToken: refresh token flow error:", err);
+		async refreshToken() {
+			try {
+				console.log("quaily.refreshToken: refresh flow start");
+				// Start the login flow in a popup
+				const token = await refreshToken(this.settings.refreshToken)
+				// if your auth server is at localhost:8080
+				console.log("quaily.refreshToken: access token expiry:", token.expiry);
+				this.settings.accessToken = token.access_token;
+				this.settings.refreshToken = token.refresh_token;
+				this.settings.tokenExpiry = token.expiry;
+				await this.saveSettings();
+				this.getClients();
+			} catch (err) {
+				console.error("quaily.refreshToken: refresh token flow error:", err);
+			}
 		}
-	}
 
-	async clearTokens() {
-		console.log("quaily.clearTokens: clear tokens");
-		this.settings.accessToken = '';
-		this.settings.refreshToken = '';
-		this.settings.tokenExpiry = '';
-		await this.saveSettings();
-		await this.loadActions();
-	}
+		async clearTokens(reloadActions = true) {
+			console.log("quaily.clearTokens: clear tokens");
+			this.settings.accessToken = '';
+			this.settings.refreshToken = '';
+			this.settings.tokenExpiry = '';
+			await this.saveSettings();
+			if (reloadActions) {
+				await this.loadActions();
+			}
+		}
 
 	isLogged () {
 		if (this.settings.accessToken === ''
@@ -203,27 +224,39 @@ export default class QuailPlugin extends Plugin implements QuailPlugin {
 		return true
 	}
 
-	updateToken() {
-		if (this.settings.tokenExpiry !== '') {
-			const expiry = new Date(this.settings.tokenExpiry);
-			const now = new Date();
-			const refreshTokenThreshold = 3600*24*364*1000;
-			const accessTokenThreshold = 3600*12*1000;
-			if (expiry.getTime() <= now.getTime() - refreshTokenThreshold) {
-				// if the expiry is more than 364 days ago, need to login again
-				console.log("quaily.updateToken: token expired, clear tokens", expiry, now);
-				this.clearTokens();
-			} else if (expiry.getTime() <= now.getTime() - accessTokenThreshold) {
-				// refresh the token if it's less than 12 hours from expiry
-				console.log("quaily.updateToken: token expired, refresh token", expiry, now);
-				this.refreshToken();
-			} else {
-				this.refreshToken();
-				console.log("quaily.updateToken: token is still valid, nothing to do");
+		async updateToken() {
+			const tokenExpiry = this.settings.tokenExpiry?.trim() || "";
+			const refresh = this.settings.refreshToken?.trim() || "";
+
+			if (!tokenExpiry || !refresh) {
+				console.log("quaily.updateToken: missing token data, clear tokens");
+				await this.clearTokens(false);
+				return;
 			}
-		} else {
-			console.log("quaily.updateToken: no token found, clear tokens");
-			this.clearTokens();
+
+			const expiry = this.parseTokenExpiry(tokenExpiry);
+			if (!expiry) {
+				console.log("quaily.updateToken: invalid token expiry, clear tokens", tokenExpiry);
+				await this.clearTokens(false);
+				return;
+			}
+
+			const nowMs = Date.now();
+			const msUntilExpiry = expiry.getTime() - nowMs;
+			const refreshIfWithinMs = 12 * 3600 * 1000;
+
+			if (msUntilExpiry <= 0) {
+				console.log("quaily.updateToken: access token expired, refresh token", expiry);
+				await this.refreshToken();
+				return;
+			}
+
+			if (msUntilExpiry <= refreshIfWithinMs) {
+				console.log("quaily.updateToken: access token near expiry, refresh token", expiry);
+				await this.refreshToken();
+				return;
+			}
+
+			console.log("quaily.updateToken: token is still valid, nothing to do");
 		}
 	}
-}

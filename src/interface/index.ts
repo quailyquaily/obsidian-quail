@@ -36,7 +36,7 @@ export interface QuailPlugin {
 	updateChannels(): Promise<void>;
 	login(): Promise<void>;
 	refreshToken(): Promise<void>;
-	clearTokens(): Promise<void>;
+	clearTokens(reloadActions?: boolean): Promise<void>;
 	isLogged(): boolean;
-	updateToken(): void;
+	updateToken(): Promise<void>;
 }
