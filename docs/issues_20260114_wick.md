@@ -68,6 +68,7 @@ Columns:
 | 25 | Documentation | Typo in comment (“accont”). | `src/util.ts` | John | Verified | Fixed |
 | 26 | Error Handling | No explicit request timeouts (OAuth `fetch`; `quail-js` calls not verified here). | `src/oauth/oauth.js` | John | Partially Verified | Fixed |
 | 27 | Build/CI | Release workflow uses deprecated patterns and broad permissions. | `.github/workflows/release.yaml:13`, `.github/workflows/release.yaml:18` | Wick | Verified | Open |
+| 27 | Build/CI | Release workflow uses deprecated patterns and broad permissions. | `.github/workflows/release.yaml` | Wick | Verified | Fixed |
 
 ### Not Verified (Claims)
 
