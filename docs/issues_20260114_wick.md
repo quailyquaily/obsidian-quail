@@ -29,8 +29,8 @@ Columns:
 | ID | Type | Summary | Evidence | Source | Verification | State |
 |---:|:--|:--|:--|:--|:--|:--|
 | 1 | Logic/Async Bug | Token refresh logic is inverted and async flows weren’t awaited (stale tokens, unpredictable startup). | `main.ts` | Wick + John | Verified | Fixed |
-| 2 | Auth Bug/Security | OAuth flow: PKCE `plain`, callback parsing called with wrong args, async callback not awaited, multiple listeners can race/resolve multiple times. | `src/oauth/oauth.js:42`, `src/oauth/oauth.js:75`, `src/oauth/oauth.js:96` | Wick + John | Verified | Open |
-| 3 | Bug | `replaceImageUrls()` returns `string` on mismatch and `{content,image_urls}` otherwise; callers assume object. | `src/util.ts:192`, `src/actions/index.ts:91` | Wick | Verified | Open |
+| 2 | Auth Bug/Security | OAuth flow: PKCE `plain`, callback parsing called with wrong args, async callback not awaited, multiple listeners can race/resolve multiple times. | `src/oauth/oauth.js` | Wick + John | Verified | Fixed |
+| 3 | Bug | `replaceImageUrls()` had inconsistent return type; now throws on mismatch and callers surface the error instead of continuing. | `src/util.ts`, `src/actions/index.ts:91` | Wick | Verified | Fixed |
 
 ### P1
 

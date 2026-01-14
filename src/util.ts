@@ -191,8 +191,9 @@ export default {
 
   replaceImageUrls: function (content: string, oldUrls: string[], newUrls: string[]) {
     if (oldUrls.length !== newUrls.length) {
-      console.log("quaily.replaceImageUrls: the number of old and new urls do not match, return original content");
-      return content;
+      throw new Error(
+        `quaily.replaceImageUrls: oldUrls/newUrls length mismatch: ${oldUrls.length} != ${newUrls.length}`
+      );
     }
     const urlMap: any = {};
     for (let ix = 0; ix < oldUrls.length; ix++) {

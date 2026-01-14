@@ -88,11 +88,18 @@ async function arrangeArticle(app: App, client: any, auxiliaClient: any, setting
   }
 
   // replace image urls
-  const ret:any = util.replaceImageUrls(content, oldUrls, newUrls);
-  const newContent = ret.content.trim() || '';
-  const imageUrls = ret.image_urls.filter((url: string) => {
-    return url.startsWith('https://') || url.startsWith('http://') || url.startsWith('//')
-  })
+  let newContent = '';
+  let imageUrls: string[] = [];
+  try {
+    const ret:any = util.replaceImageUrls(content, oldUrls, newUrls);
+    newContent = ret.content.trim() || '';
+    imageUrls = ret.image_urls.filter((url: string) => {
+      return url.startsWith('https://') || url.startsWith('http://') || url.startsWith('//')
+    })
+  } catch (e) {
+    new ErrorModal(app, e as Error).open();
+    return { frontmatter: null, content: null};
+  }
   const fmt = fm.formalizeFrontmatter(frontmatter, newContent);
 
   if (frontmatter.cover_image === null && frontmatter.cover_image_url === '') {
